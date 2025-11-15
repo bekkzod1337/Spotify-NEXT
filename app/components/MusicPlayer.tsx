@@ -2,14 +2,22 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Search, ListMusic } from 'lucide-react';
-import { getTopTracks } from '../api/api'; // api.ts dan
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  Search,
+  ListMusic
+} from 'lucide-react';
 
 type Track = {
   id: string;
   title: string;
   artist?: string;
-  src?: string;
+  src: string;
+  album?: string;
   cover?: string;
 };
 
@@ -23,28 +31,13 @@ export default function SpotifyMusicPlayer() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Spotify tracklarni olish
   useEffect(() => {
-    async function fetchSpotifyTracks() {
-      try {
-        const data = await getTopTracks();
-        const formatted = data.map((t: any) => ({
-          id: t.id,
-          title: t.name,
-          artist: t.artists.map((a: any) => a.name).join(', '),
-          src: t.preview_url || '', // 30 soniyali preview
-          cover: t.album.images[0]?.url || ''
-        }));
-        setTracks(formatted);
-      } catch (err) {
-        console.error('Failed to fetch Spotify tracks:', err);
-        setTracks([]);
-      }
-    }
-    fetchSpotifyTracks();
+    fetch('/musics/manifest.json')
+      .then((res) => res.json())
+      .then((data) => setTracks(data.tracks || []))
+      .catch(() => setTracks([]));
   }, []);
 
-  // Audio elementni yaratish va eventlar
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
@@ -60,44 +53,33 @@ export default function SpotifyMusicPlayer() {
     }
   }, []);
 
-  // Volume o‘zgarganda
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
-  // Track o‘zgarganda
   useEffect(() => {
     const track = tracks[index];
     if (!track || !audioRef.current) return;
 
-    if (track.src) {
-      audioRef.current.src = track.src;
-      audioRef.current.load();
-      setProgress(0);
-    } else {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
-  }, [index, tracks]);
+    audioRef.current.src = track.src;
+    audioRef.current.load();
+
+    if (isPlaying) audioRef.current.play().catch(() => setIsPlaying(false));
+    setProgress(0);
+  }, [index, tracks, isPlaying]);
 
   const togglePlay = () => {
-    if (!audioRef.current || !tracks[index]?.src) return;
-
+    if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
+      audioRef.current.play().then(() => setIsPlaying(true));
     }
   };
 
-  const handleNext = () =>
-    setIndex((i) => (tracks.length ? (i + 1) % tracks.length : 0));
-  const handlePrev = () =>
-    setIndex((i) => (tracks.length ? (i - 1 + tracks.length) % tracks.length : 0));
+  const handleNext = () => setIndex((i) => (tracks.length ? (i + 1) % tracks.length : 0));
+  const handlePrev = () => setIndex((i) => (tracks.length ? (i - 1 + tracks.length) % tracks.length : 0));
   const handleSeek = (pct: number) => {
     if (!audioRef.current?.duration) return;
     audioRef.current.currentTime = (pct / 100) * audioRef.current.duration;
@@ -120,22 +102,13 @@ export default function SpotifyMusicPlayer() {
       {/* NOW PLAYING */}
       <div className="flex items-center gap-4 mb-4">
         {tracks[index]?.cover && (
-          <img
-            src={tracks[index].cover}
-            alt={tracks[index].title}
-            className="w-12 h-12 rounded-md object-cover"
-          />
+          <img src={tracks[index].cover} alt={tracks[index].title} className="w-12 h-12 rounded-md object-cover" />
         )}
         <div className="flex-1">
-          <div className="text-white font-semibold text-lg drop-shadow-lg">
-            {tracks[index]?.title || 'No Track'}
-          </div>
+          <div className="text-white font-semibold text-lg drop-shadow-lg">{tracks[index]?.title || 'No Track'}</div>
           <div className="text-xs text-white/70">{tracks[index]?.artist || ''}</div>
         </div>
-        <ListMusic
-          size={24}
-          className="text-white/60 cursor-pointer hover:text-white transition"
-        />
+        <ListMusic size={24} className="text-white/60 cursor-pointer hover:text-white transition" />
       </div>
 
       {/* CONTROLS */}
@@ -204,9 +177,7 @@ export default function SpotifyMusicPlayer() {
 
       {/* TRACK LIST */}
       <ul className="mt-4 max-h-60 overflow-y-auto divide-y divide-white/10">
-        {filtered.length === 0 && (
-          <li className="py-2 text-sm text-white/70">No tracks found</li>
-        )}
+        {filtered.length === 0 && <li className="py-2 text-sm text-white/70">No tracks found</li>}
 
         {filtered.map((t) => {
           const active = tracks[index]?.id === t.id;
@@ -216,12 +187,10 @@ export default function SpotifyMusicPlayer() {
               onClick={() => {
                 const realIndex = tracks.findIndex((tt) => tt.id === t.id);
                 if (realIndex >= 0) setIndex(realIndex);
-                setIsPlaying(false); // play tugmasi orqali ishga tushadi
+                setIsPlaying(true);
               }}
               className={`px-3 py-2 rounded-md flex justify-between items-center cursor-pointer transition-all duration-200 ${
-                active
-                  ? 'bg-gradient-to-r from-[#00f0ff]/30 to-[#008cff]/30 shadow-inner'
-                  : 'hover:bg-white/10'
+                active ? 'bg-gradient-to-r from-[#00f0ff]/30 to-[#008cff]/30 shadow-inner' : 'hover:bg-white/10'
               }`}
             >
               <div>
