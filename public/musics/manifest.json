@@ -1,0 +1,16 @@
+{
+  "tracks": [
+    {
+      "id": "track-1",
+      "title": "Love is...",
+      "artist": "MINOR",
+      "src": "/musics/love_is.mp3"
+    },
+    {
+      "id": "track-2",
+      "title": "Sample Track 2",
+      "artist": "Artist B",
+      "src": "/musics/sample2.mp3"
+    }
+  ]
+}
