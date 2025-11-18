@@ -21,11 +21,34 @@ export default function HomePage() {
         <source src="/1.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      
+      {/* Dark Overlay for better text visibility */}
+      <div className="fixed inset-0 bg-black/40 z-5 pointer-events-none" />
+      
       <Header />
       <div className="relative z-10">
         <LandingHero />
         <Sidebar />
       </div>
+
+      {/* Scroll Indicator */}
+      <motion.div
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20"
+      >
+        <div className="text-[#1DB954] text-center">
+          <div className="text-xs font-semibold uppercase tracking-widest mb-2">Scroll to explore</div>
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </motion.div>
+        </div>
+      </motion.div>
     </main>
   );
 }

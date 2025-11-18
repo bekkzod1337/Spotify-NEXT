@@ -5,7 +5,7 @@ import React from 'react';
 
 export default function GhostSidebar() {
   return (
-    <aside className="absolute top-16 left-2 w-[350px] h-[680px] rounded-md bg-[#121212] overflow-y-auto flex flex-col gap-6">
+    <aside className="absolute top-22 left-2 w-[350px] h-[680px] rounded-md bg-[#121212] overflow-y-auto flex flex-col gap-6">
       {/* Header */}
       <div className='flex items-center justify-between p-4'>
         <p className='text-white font-bold text-lg'>Your Library</p>

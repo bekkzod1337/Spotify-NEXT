@@ -4,13 +4,22 @@
       "id": "track-1",
       "title": "Love is...",
       "artist": "MINOR",
-      "src": "/musics/love_is.mp3"
+      "src": "/musics/love_is.mp3",
+      "cover": "/photos/covers/love_is.jpg"
     },
     {
       "id": "track-2",
-      "title": "Sample Track 2",
-      "artist": "Artist B",
-      "src": "/musics/sample2.mp3"
+      "title": "Him and I",
+      "artist": "G-Eazy & Halsey",
+      "src": "/musics/him_and_i.mp3",
+      "cover": "/photos/covers/him_and_i.jpg"
+    },
+    {
+      "id": "track-3",
+      "title": "Soxtasan",
+      "artist": "MINOR & UzTeeran",
+      "src": "/musics/soxtasan.mp3",
+      "cover": ""
     }
   ]
 }
