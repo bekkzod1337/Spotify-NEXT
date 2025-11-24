@@ -40,15 +40,28 @@ export default function LibraryPage() {
   const { favorites, setPlaylist, setCurrentTrackIndex, setIsPlaying } = useMusicContext();
   const { toasts, showToast, removeToast } = useToast();
 
-  // Load data from localStorage and manifest
+  // Load data from Deezer API and localStorage
   useEffect(() => {
     setIsLoading(true);
     Promise.all([
-      fetch('/musics/manifest.json')
+      fetch('/api/deezer?action=trending&limit=50')
         .then((res) => res.json())
-        .then((data) => setAllTracks(data.tracks || []))
+        .then((data) => {
+          const tracks = data.data?.map((track: any, idx: number) => ({
+            id: track.id ? `deezer-${track.id}` : `dz-${idx}`,
+            title: track.title || 'Unknown',
+            artist: track.artist?.name || track.artist || 'Unknown Artist',
+            cover: track.album?.cover_medium || track.album?.cover || '',
+            duration: track.duration || 0,
+            source: 'deezer',
+            album: track.album?.title,
+            preview: track.preview || '',
+            src: track.preview || '',
+          })) || [];
+          setAllTracks(tracks);
+        })
         .catch((err) => {
-          console.error('Failed to load tracks:', err);
+          console.error('Failed to load tracks from Deezer API:', err);
           showToast('Failed to load tracks. Please refresh.', 'error');
         }),
       new Promise<void>((resolve) => {
@@ -63,7 +76,7 @@ export default function LibraryPage() {
         resolve();
       }),
     ]).finally(() => setIsLoading(false));
-  }, []);
+  }, [showToast]);
 
   // Save playlists to localStorage
   useEffect(() => {
@@ -71,6 +84,13 @@ export default function LibraryPage() {
   }, [playlists]);
 
   const likedTracks = allTracks.filter((t) => favorites.has(t.id));
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const createPlaylist = () => {
     if (!newPlaylistName.trim()) {
@@ -164,15 +184,24 @@ export default function LibraryPage() {
         animate={{ opacity: 1 }}
         className="flex-1 ml-[320px] pb-32"
       >
-        <div className="relative h-64 bg-gradient-to-b from-[#1DB954]/40 via-[#1DB954]/20 to-transparent">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10" />
-          <div className="relative z-20 pt-12 px-8 h-full flex flex-col justify-end pb-6">
-            <h1 className="text-5xl font-bold text-white mb-2">Your Library</h1>
-            <p className="text-white/70">Manage and organize your music</p>
+        <div className="relative h-80 bg-gradient-to-b from-[#1DB954]/50 via-[#1DB954]/20 to-transparent overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10" />
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#1DB954] rounded-full mix-blend-screen blur-3xl" />
+          </div>
+          <div className="relative z-20 pt-16 px-8 h-full flex flex-col justify-end pb-8">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h1 className="text-6xl font-bold text-white mb-3">Your Library</h1>
+              <p className="text-white/70 text-lg">Create, organize & enjoy your favorite music</p>
+            </motion.div>
           </div>
         </div>
 
-        <div className="px-8 py-6 border-b border-white/10 flex gap-2 flex-wrap">
+        <div className="sticky top-0 z-40 px-8 py-6 border-b border-white/5 bg-black/40 backdrop-blur-md flex gap-3 flex-wrap">
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
@@ -184,8 +213,8 @@ export default function LibraryPage() {
               }}
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-[#1DB954] text-black'
-                  : 'bg-white/10 text-white hover:bg-white/20'
+                  ? 'bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-black shadow-lg shadow-[#1DB954]/30'
+                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
               }`}
             >
               {tab.icon}
@@ -194,64 +223,78 @@ export default function LibraryPage() {
           ))}
         </div>
 
-        <div className="px-8 py-8">
+        <div className="px-8 py-12">
           {activeTab === 'playlists' && !selectedPlaylistId && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-white">Your Playlists</h2>
+              <div className="flex justify-between items-center mb-10">
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <h2 className="text-4xl font-bold text-white mb-2">Your Playlists</h2>
+                  <p className="text-white/50">{playlists.length} playlist{playlists.length !== 1 ? 's' : ''}</p>
+                </motion.div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsCreatingPlaylist(true)}
-                  className="px-6 py-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold rounded-full transition flex items-center gap-2"
+                  className="px-8 py-3 bg-gradient-to-r from-[#1DB954] to-[#1ed760] hover:shadow-lg hover:shadow-[#1DB954]/30 text-black font-bold rounded-full transition flex items-center gap-2"
                 >
-                  <Plus size={16} /> Create Playlist
+                  <Plus size={18} /> Create Playlist
                 </motion.button>
               </div>
 
               {isCreatingPlaylist && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                   onClick={() => setIsCreatingPlaylist(false)}
                 >
                   <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="bg-[#282828] rounded-lg p-6 w-96 shadow-2xl"
+                    className="bg-gradient-to-b from-[#404040] to-[#282828] rounded-xl p-8 w-full max-w-md shadow-2xl border border-white/10"
                   >
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-2xl font-bold text-white">Create Playlist</h3>
-                      <button
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-3xl font-bold text-white">Create Playlist</h3>
+                      <motion.button
+                        whileHover={{ rotate: 90 }}
                         onClick={() => setIsCreatingPlaylist(false)}
-                        className="text-white/60 hover:text-white"
+                        className="text-white/60 hover:text-white transition"
                       >
                         <X size={24} />
-                      </button>
+                      </motion.button>
                     </div>
                     <input
                       type="text"
-                      placeholder="Playlist name..."
+                      placeholder="Enter playlist name..."
                       value={newPlaylistName}
                       onChange={(e) => setNewPlaylistName(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && createPlaylist()}
                       autoFocus
-                      className="w-full px-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/50 border border-white/20 focus:border-[#1DB954] focus:outline-none mb-4"
+                      className="w-full px-4 py-3 rounded-lg bg-white/10 text-white placeholder-white/50 border border-white/20 focus:border-[#1DB954] focus:ring-2 focus:ring-[#1DB954]/20 focus:outline-none mb-6 transition"
                     />
                     <div className="flex gap-3 justify-end">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setIsCreatingPlaylist(false)}
                         className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
                       >
                         Cancel
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={createPlaylist}
                         disabled={!newPlaylistName.trim()}
-                        className="px-6 py-2 rounded-full bg-[#1DB954] hover:bg-[#1ed760] disabled:opacity-50 text-black font-bold transition"
+                        className="px-6 py-2 rounded-full bg-gradient-to-r from-[#1DB954] to-[#1ed760] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold transition"
                       >
                         Create
-                      </button>
+                      </motion.button>
                     </div>
                   </motion.div>
                 </motion.div>
@@ -261,57 +304,70 @@ export default function LibraryPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-center justify-center py-24"
+                  className="flex items-center justify-center py-32"
                 >
                   <div className="text-center">
-                    <Music size={80} className="text-white/20 mx-auto mb-4" />
-                    <div className="text-white/60 text-xl">No playlists yet</div>
-                    <div className="text-white/40 text-sm">Create your first playlist to get started</div>
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Music size={120} className="text-white/10 mx-auto mb-6" />
+                    </motion.div>
+                    <div className="text-white/60 text-2xl font-semibold mb-2">No playlists yet</div>
+                    <div className="text-white/40 text-base mb-6">Start creating playlists to organize your music</div>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsCreatingPlaylist(true)}
+                      className="px-8 py-3 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-black font-bold rounded-full transition"
+                    >
+                      Create First Playlist
+                    </motion.button>
                   </div>
                 </motion.div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {playlists.map((playlist, idx) => (
                     <motion.div
                       key={playlist.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      whileHover={{ scale: 1.02 }}
-                      className="group bg-white/5 rounded-lg overflow-hidden hover:bg-white/10 transition cursor-pointer"
+                      whileHover={{ y: -5 }}
+                      className="group bg-gradient-to-b from-white/10 to-white/5 rounded-xl overflow-hidden hover:from-white/20 hover:to-white/10 transition cursor-pointer backdrop-blur-sm border border-white/10 hover:border-white/20"
                     >
-                      <div className={`h-40 bg-gradient-to-br ${playlist.color} flex items-center justify-center relative`}>
-                        <Music size={48} className="text-white/80" />
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition" />
+                      <div className={`h-48 bg-gradient-to-br ${playlist.color} flex items-center justify-center relative overflow-hidden`}>
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-black/40" />
+                        <Music size={56} className="text-white/80 relative z-10" />
                         <motion.button
-                          initial={{ opacity: 0 }}
-                          whileHover={{ opacity: 1 }}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileHover={{ opacity: 1, scale: 1 }}
                           onClick={() => setSelectedPlaylistId(playlist.id)}
-                          className="absolute bottom-4 right-4 p-3 bg-[#1DB954] hover:bg-[#1ed760] rounded-full transition transform hover:scale-110 z-50"
+                          className="absolute bottom-4 right-4 p-3 bg-gradient-to-r from-[#1DB954] to-[#1ed760] hover:shadow-lg hover:shadow-[#1DB954]/50 rounded-full transition transform hover:scale-110 z-50"
                         >
                           <Play size={20} className="text-black fill-current" />
                         </motion.button>
                       </div>
 
-                      <div className="p-4">
-                        <h3 className="font-bold text-white truncate">{playlist.name}</h3>
-                        <p className="text-white/60 text-sm mb-3">{playlist.trackIds.length} songs</p>
+                      <div className="p-5">
+                        <h3 className="font-bold text-white truncate text-lg mb-1">{playlist.name}</h3>
+                        <p className="text-white/50 text-sm mb-4">{playlist.trackIds.length} songs</p>
                         <div className="flex gap-2">
                           <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => setSelectedPlaylistId(playlist.id)}
-                            className="flex-1 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded transition flex items-center justify-center gap-1"
+                            className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition flex items-center justify-center gap-1"
                           >
-                            <Plus size={14} /> Add
+                            <Music size={14} /> View
                           </motion.button>
                           <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => deletePlaylist(playlist.id)}
-                            className="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-400 text-sm rounded transition"
+                            className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                           </motion.button>
                         </div>
                       </div>
@@ -483,19 +539,22 @@ export default function LibraryPage() {
 
           {activeTab === 'liked' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Liked Songs</h2>
-                  <p className="text-white/60">{likedTracks.length} songs</p>
-                </div>
+              <div className="flex justify-between items-center mb-10">
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <h2 className="text-4xl font-bold text-white mb-2">Liked Songs</h2>
+                  <p className="text-white/50">{likedTracks.length} songs • {formatDuration(likedTracks.reduce((acc, t) => acc + (t.duration || 0), 0))}</p>
+                </motion.div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handlePlayAll}
                   disabled={likedTracks.length === 0}
-                  className="px-6 py-2 bg-[#1DB954] hover:bg-[#1ed760] disabled:opacity-50 text-black font-bold rounded-full transition"
+                  className="px-8 py-3 bg-gradient-to-r from-[#1DB954] to-[#1ed760] hover:shadow-lg hover:shadow-[#1DB954]/30 disabled:opacity-50 text-black font-bold rounded-full transition flex items-center gap-2"
                 >
-                  <Play size={16} className="inline mr-2 fill-current" /> Play All
+                  <Play size={18} className="fill-current" /> Play All
                 </motion.button>
               </div>
 
@@ -503,12 +562,17 @@ export default function LibraryPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-center justify-center py-24"
+                  className="flex items-center justify-center py-32"
                 >
                   <div className="text-center">
-                    <Heart size={80} className="text-white/20 mx-auto mb-4" />
-                    <div className="text-white/60 text-xl">No liked songs yet</div>
-                    <div className="text-white/40 text-sm">Like songs to add them to your collection</div>
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Heart size={120} className="text-white/10 mx-auto mb-6" />
+                    </motion.div>
+                    <div className="text-white/60 text-2xl font-semibold mb-2">No liked songs yet</div>
+                    <div className="text-white/40 text-base">Like songs while listening to build your collection</div>
                   </div>
                 </motion.div>
               ) : (
@@ -558,11 +622,16 @@ export default function LibraryPage() {
           )}
 
           {activeTab === 'recent' && (
-            <div className="flex items-center justify-center py-24">
+            <div className="flex items-center justify-center py-32">
               <div className="text-center">
-                <Clock size={80} className="text-white/20 mx-auto mb-4" />
-                <div className="text-white/60 text-xl">No recently played songs</div>
-                <div className="text-white/40 text-sm">Start playing music to see your history</div>
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Clock size={120} className="text-white/10 mx-auto mb-6" />
+                </motion.div>
+                <div className="text-white/60 text-2xl font-semibold mb-2">No recently played songs</div>
+                <div className="text-white/40 text-base">Start playing music to see your history</div>
               </div>
             </div>
           )}

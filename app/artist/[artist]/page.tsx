@@ -6,6 +6,8 @@ import { Play, Heart, MoreHorizontal, ArrowLeft, Clock } from 'lucide-react';
 import Link from 'next/link';
 import Sidebar from '@/app/components/Sidebar';
 import { useMusicContext, type Track } from '@/app/context/MusicContext';
+import { getArtistTracks } from '@/app/services/fullLengthMusicApi';
+import Image from 'next/image';
 
 export default function ArtistPage({ params }: { params: Promise<{ artist: string }> }) {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -17,20 +19,14 @@ export default function ArtistPage({ params }: { params: Promise<{ artist: strin
   const { favorites, toggleFavorite, setPlaylist, setCurrentTrackIndex, setIsPlaying } = useMusicContext();
 
   useEffect(() => {
-    setIsLoading(true);
-    fetch('/musics/manifest.json')
-      .then((res) => res.json())
-      .then((data) => {
-        const artistTracks = (data.tracks || []).filter(
-          (t: Track) => t.artist === artistName
-        );
-        setTracks(artistTracks);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setTracks([]);
-        setIsLoading(false);
-      });
+    const loadTracks = async () => {
+      setIsLoading(true);
+      const artistTracks = await getArtistTracks(artistName, 50);
+      setTracks(artistTracks as Track[]);
+      setIsLoading(false);
+    };
+
+    loadTracks();
   }, [artistName]);
 
   const handlePlayAll = () => {

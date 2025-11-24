@@ -6,10 +6,12 @@ export type Track = {
   id: string;
   title: string;
   artist?: string;
-  src: string;
+  src?: string;
+  preview?: string;
   album?: string;
   cover?: string;
   duration?: number;
+  source?: 'deezer' | 'youtube';
 };
 
 export type PlaylistMode = 'all' | 'liked' | 'playlist';

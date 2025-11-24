@@ -14,10 +14,29 @@ export default function PlaylistPage() {
   const { favorites, toggleFavorite, setPlaylist, setIsPlaying } = useMusicContext();
 
   useEffect(() => {
-    fetch('/musics/manifest.json')
-      .then((res) => res.json())
-      .then((data) => setTracks(data.tracks || []))
-      .catch(() => setTracks([]));
+    const loadTracks = async () => {
+      try {
+        const response = await fetch('/api/deezer?action=trending&limit=50');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        const deezerTracks = (data.data || []).map((track: any, idx: number) => ({
+          id: track.id ? `deezer-${track.id}` : `dz-${idx}`,
+          title: track.title || 'Unknown',
+          artist: track.artist?.name || 'Unknown Artist',
+          src: track.preview || '',
+          preview: track.preview || '',
+          album: track.album?.title || 'Unknown Album',
+          cover: track.album?.cover_medium || track.album?.cover_big || '',
+          duration: track.duration || 0,
+          source: 'deezer',
+        } as Track));
+        setTracks(deezerTracks);
+      } catch (error) {
+        console.error('Error loading tracks:', error);
+        setTracks([]);
+      }
+    };
+    loadTracks();
   }, []);
 
   const handlePlaylistPlay = () => {
@@ -27,7 +46,6 @@ export default function PlaylistPage() {
 
   const handleTrackPlay = (trackIndex: number) => {
     setPlaylist(tracks, 'playlist');
-    const { setCurrentTrackIndex } = require('@/app/context/MusicContext').useMusicContext();
     setCurrentTrackIndex(trackIndex);
     setIsPlaying(true);
   };

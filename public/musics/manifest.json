@@ -20,6 +20,27 @@
       "artist": "MINOR & UzTeeran",
       "src": "/musics/soxtasan.mp3",
       "cover": ""
+    },
+    {
+      "id": "track-4",
+      "title": "Diet Mountain Dew",
+      "artist": "Lana Del Rey",
+      "src": "/musics/diet_mountain_dew.mp3",
+      "cover": "/photos/covers/diet_mountain_dew.jpg"
+    },
+    {
+      "id": "track-5",
+      "title": "Next to You",
+      "artist": "OneHeart",
+      "src": "/musics/next_to_you.mp3",
+      "cover": "/photos/covers/next_to_you.jpg"
+    },
+    {
+      "id": "track-6",
+      "title": "Sempero",
+      "artist": "Er14Kh",
+      "src": "/musics/sempero.mp3",
+      "cover": "/photos/covers/sempero.jpg"
     }
   ]
 }

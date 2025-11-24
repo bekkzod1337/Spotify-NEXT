@@ -21,26 +21,37 @@ function GhostMain() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetch('/musics/manifest.json')
-      .then((res) => res.json())
-      .then((data) => {
-        setTracks(data.tracks || []);
+    const loadTracks = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/deezer?action=trending&limit=50');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        const deezerTracks = (data.data || []).map((track: any, idx: number) => ({
+          id: track.id ? `deezer-${track.id}` : `dz-${idx}`,
+          title: track.title || 'Unknown',
+          artist: track.artist?.name || 'Unknown Artist',
+          src: track.preview || '',
+          cover: track.album?.cover_medium || track.album?.cover_big || '',
+        }));
+        setTracks(deezerTracks);
         const uniqueArtists = Array.from(
           new Set(
-            (data.tracks || [])
+            deezerTracks
               .map((t: Track) => t.artist || 'Unknown')
               .filter((artist: string) => artist !== 'Unknown')
           )
         ) as string[];
         setArtists(uniqueArtists);
         setIsLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error('Error loading tracks:', error);
         setTracks([]);
         setArtists([]);
         setIsLoading(false);
-      });
+      }
+    };
+    loadTracks();
   }, []);
 
   return (

@@ -81,11 +81,23 @@ export default function MusicPlayer() {
   useEffect(() => {
     if (!currentTrack || !audioRef.current) return;
 
-    audioRef.current.src = currentTrack.src;
+    // Handle Deezer tracks with preview URL
+    const audioSrc = currentTrack.src || currentTrack.preview;
+    
+    if (!audioSrc) {
+      console.warn('No audio source available for track:', currentTrack);
+      setIsPlaying(false);
+      return;
+    }
+
+    audioRef.current.src = audioSrc;
     audioRef.current.load();
 
     if (isPlaying) {
-      audioRef.current.play().catch(() => setIsPlaying(false));
+      audioRef.current.play().catch((err) => {
+        console.error('Error playing audio:', err);
+        setIsPlaying(false);
+      });
     }
   }, [currentTrack, isPlaying, setIsPlaying]);
 

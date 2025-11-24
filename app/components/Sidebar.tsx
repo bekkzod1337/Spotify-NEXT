@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Search, Library, Plus, Heart, LogOut, Settings, Disc3, TrendingUp, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 type Playlist = {
   id: string;
@@ -14,6 +15,7 @@ type Playlist = {
 };
 
 export default function Sidebar() {
+  const pathname = usePathname();
   const [activeNav, setActiveNav] = useState('home');
   const [hoveredPlaylist, setHoveredPlaylist] = useState<string | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -21,6 +23,17 @@ export default function Sidebar() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [playlistSearchQuery, setPlaylistSearchQuery] = useState('');
   const [showAllPlaylists, setShowAllPlaylists] = useState(false);
+
+  // Update active nav based on current pathname
+  useEffect(() => {
+    if (pathname === '/') {
+      setActiveNav('home');
+    } else if (pathname === '/search') {
+      setActiveNav('search');
+    } else if (pathname === '/library') {
+      setActiveNav('library');
+    }
+  }, [pathname]);
 
   // Load playlists from localStorage
   useEffect(() => {
