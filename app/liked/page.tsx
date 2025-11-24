@@ -25,17 +25,39 @@ export default function LikedPage() {
         if (!response.ok) throw new Error('Failed to fetch');
 
         const data = await response.json();
-        const allDeezerTracks = (data.data || []).map((track: any) => ({
-          id: `deezer-${track.id}`,
-          title: track.title || 'Unknown',
-          artist: track.artist?.name || 'Unknown Artist',
-          src: track.preview || '',
-          preview: track.preview || '',
-          album: track.album?.title || 'Unknown Album',
-          cover: track.album?.cover_medium || track.album?.cover_big || '',
-          duration: track.duration || 0,
-          source: 'deezer',
-        } as Track));
+interface DeezerArtist {
+  name: string;
+}
+
+interface DeezerAlbum {
+  title: string;
+  cover_medium?: string;
+  cover_big?: string;
+}
+
+interface DeezerTrack {
+  id: number;
+  title: string;
+  preview?: string;
+  duration?: number;
+  artist?: DeezerArtist;
+  album?: DeezerAlbum;
+}
+
+const deezerResults: DeezerTrack[] = Array.isArray(data.data) ? data.data : [];
+
+const allDeezerTracks: Track[] = deezerResults.map((track) => ({
+  id: `deezer-${track.id}`,
+  title: track.title || 'Unknown',
+  artist: track.artist?.name || 'Unknown Artist',
+  src: track.preview || '',
+  preview: track.preview || '',
+  album: track.album?.title || 'Unknown Album',
+  cover: track.album?.cover_medium || track.album?.cover_big || '',
+  duration: track.duration || 0,
+  source: 'deezer',
+}));
+
 
         // Filter to only liked tracks
         const liked = allDeezerTracks.filter((t: Track) => favorites.has(t.id));

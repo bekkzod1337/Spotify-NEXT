@@ -18,18 +18,40 @@ export default function PlaylistPage() {
       try {
         const response = await fetch('/api/deezer?action=trending&limit=50');
         if (!response.ok) throw new Error('Failed to fetch');
-        const data = await response.json();
-        const deezerTracks = (data.data || []).map((track: any, idx: number) => ({
-          id: track.id ? `deezer-${track.id}` : `dz-${idx}`,
-          title: track.title || 'Unknown',
-          artist: track.artist?.name || 'Unknown Artist',
-          src: track.preview || '',
-          preview: track.preview || '',
-          album: track.album?.title || 'Unknown Album',
-          cover: track.album?.cover_medium || track.album?.cover_big || '',
-          duration: track.duration || 0,
-          source: 'deezer',
-        } as Track));
+        interface DeezerArtist {
+  name?: string;
+}
+
+interface DeezerAlbum {
+  title?: string;
+  cover_medium?: string;
+  cover_big?: string;
+}
+
+interface DeezerTrackResponse {
+  id: number;
+  title?: string;
+  preview?: string;
+  duration?: number;
+  artist?: DeezerArtist;
+  album?: DeezerAlbum;
+}
+
+const data = await response.json();
+
+const deezerTracks: Track[] = (Array.isArray(data.data) ? data.data : [])
+  .map((track: DeezerTrackResponse): Track => ({
+    id: `deezer-${track.id}`,
+    title: track.title || 'Unknown',
+    artist: track.artist?.name || 'Unknown Artist',
+    src: track.preview || '',
+    preview: track.preview || '',
+    album: track.album?.title || 'Unknown Album',
+    cover: track.album?.cover_medium || track.album?.cover_big || '',
+    duration: track.duration || 0,
+    source: 'deezer',
+  }));
+
         setTracks(deezerTracks);
       } catch (error) {
         console.error('Error loading tracks:', error);
